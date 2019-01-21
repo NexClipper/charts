@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: "{{ include "nexclipper-agent.fullname" . }}-test-connection"
+  labels:
+    app.kubernetes.io/name: {{ include "nexclipper-agent.name" . }}
+    helm.sh/chart: {{ include "nexclipper-agent.chart" . }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
+  annotations:
+    "helm.sh/hook": test-success
+spec:
+  containers:
+    - name: wget
+      image: busybox
+      command: ['wget']
+      args:  ['{{ include "nexclipper-agent.fullname" . }}]
+  restartPolicy: Never

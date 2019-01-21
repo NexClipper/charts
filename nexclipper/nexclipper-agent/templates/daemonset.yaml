@@ -1,0 +1,78 @@
+apiVersion: extensions/v1beta1
+kind: DaemonSet
+metadata:
+  name: {{ .Chart.Name }}
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app: {{ .Chart.Name }}
+spec:
+  selector:
+    matchLabels:
+      name: {{ .Chart.Name }}
+  template:
+    metadata:
+      labels:
+        name: {{ .Chart.Name }}
+    spec:
+      volumes:
+      - name: docker-sock
+        hostPath:
+          path: /var/run/docker.sock
+          type: Socket
+      - name: docker
+        hostPath:
+          path: /var/lib/docker
+      - name: dev
+        hostPath:
+          path: /dev
+      - name: sys
+        hostPath:
+          path: /sys
+      - name: log
+        hostPath:
+          path: /var/log
+      - name: pki
+        hostPath:
+          path: {{ .Values.pki.path }}
+      hostNetwork: true
+      hostPID: true
+      hostIPC: true
+      tolerations:
+      - operator: Exists
+        effect: NoSchedule
+        key: node-role.kubernetes.io/master
+      - operator: Exists
+        effect: NoExecute
+        key: node-role.kubernetes.io/master
+      containers:
+      - name: nexclipper-k8s
+        image: nexclipper/nexagent
+        securityContext:
+          privileged: true
+        env:
+        - name: agent_key
+          value: {{ .Values.agent.key }}
+        - name: agent_endpoint
+          value: {{ .Values.agent.endpoint }}
+        - name: k8s_apiserver_protocol
+          value: {{ .Values.apiserver.protocol }}
+        - name: k8s_apiserver_port
+          value: '{{ .Values.apiserver.port }}'
+        resources:
+          requests:
+            memory: 512Mi
+          limits:
+            memory: 1.7Gi
+        volumeMounts:
+        - mountPath: /var/run/docker.sock
+          name: docker-sock
+        - mountPath: /var/lib/docker
+          name: docker
+        - mountPath: /dev
+          name: dev
+        - mountPath: /sys
+          name: sys
+        - mountPath: /var/log
+          name: log
+        - mountPath: /pki
+          name: pki
